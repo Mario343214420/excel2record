@@ -1,0 +1,15 @@
+{
+  "projects": [
+    {
+      "projectName": "视频拼接",
+      "partyA": "山源",
+      "startDate": "3月18日",
+      "endDate": "3月25日",
+      "state": "进行中",
+      "overWork": "已完成某某部分",
+      "effect": "其他项目影响",
+      "remainWork": "剩余某某部分未完成",
+      "remark": "备注"
+    }
+  ]
+}

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/vue/2.7.0/vue.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.5.0/axios.min.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+<div id="app">
+    <div>
+        <el-button size="mini" @click="handleAdd">新增</el-button>
+        <el-button size="mini" @click="getData" disabled>查看</el-button>
+        <h4>Ⅰ：点击新增，增加项，点击修改； <br> Ⅱ：填写项目详情，如无内容，填入'/'或'空' <br>Ⅲ：修改后点击保存，确定无误走提交</h4>
+    </div>
+    <el-table
+            :data="data"
+            style="width: 100%"
+            :row-class-name="tableRowClassName">
+        <el-table-column v-for="(col, colIdx) in columns"
+                         :prop="col.slot"
+                         :label="col.title"
+                         show-overflow-tooltip
+                         :width="col.width">
+            <template slot-scope="scope">
+                <!-- 可编辑 -->
+                <span v-if="editIndex === scope.$index">
+                    <el-select v-if="col.type === 'select'"
+                               v-model="scope.row[col.slot]"
+                               placeholder="请选择">
+                        <el-option v-for="item in stateFlags"
+                                   :key="item.value"
+                                   :label="item.label"
+                                   :value="item.value">
+                        </el-option>
+                    </el-select>
+                    <!--<el-date-picker v-if="col.type === 'date'"
+                                    type="date"
+                                    v-model="editStartDate"
+                                    placeholder="选择日期">
+                    </el-date-picker>-->
+                    <!--<el-date-picker
+                            v-model="editDateRange"
+                            type="editDateRange"
+                            range-separator="至"
+                            start-placeholder="开始日期"
+                            end-placeholder="结束日期">
+                    </el-date-picker>-->
+                    <span v-if="col.type === 'date'">
+                        {{ scope.row }}
+                    </span>
+                    <span v-if="col.type === 'handler'">
+                        <el-button size="mini"
+                                   v-if="editIndex === scope.$index"
+                                   @click="handleSave">保存</el-button>
+                        <el-button size="mini"
+                                   @click="handleDelete">删除</el-button>
+                    </span>
+                    <el-input type="textarea"
+                              v-if="col.type === 'textarea'"
+                              :rows="4"
+                              placeholder="请输入内容"
+                              v-model="scope.row[col.slot]">
+                    </el-input>
+                    <el-input v-model="scope.row[col.slot]"
+                              v-if="col.type === 'input'"></el-input>
+                </span>
+                <!-- 正常显示 -->
+                <span v-else>
+                    <span v-if="col.type === 'handler'">
+                        <el-button size="mini"
+                                   v-if="editIndex !== scope.$index"
+                                   @click="() => { handleEdit(scope.$index, scope.row) }">修改</el-button>
+                        <el-button size="mini"
+                                   @click="() => { handleDelete(scope.$index) }">删除</el-button>
+                    </span>
+                    <span v-else>
+                        {{ scope.row[col.slot] }}
+                    </span>
+                </span>
+            </template>
+        </el-table-column>
+    </el-table>
+    <h4 style="margin-top: 20px;">
+        Ⅳ：输入用户名拼音，如 zhengyu<el-input size="mini" v-model="userName" style="width: 200px"></el-input>
+        然后点击提交<el-button size="mini" @click="sendData">提交</el-button>
+        <br>
+    </h4>
+</div>
+<script>
+new Vue({
+    el: '#app',
+    data: {
+        user: {
+            name: '张三',
+            id: 'zs',
+            password: 'argozs'
+        },
+        columns: [
+            {
+                title: '项目名',
+                slot: 'projectName',
+                width: 120,
+                type: 'input'
+            },
+            {
+                title: '甲方/对接人',
+                slot: 'partyA',
+                width: 120,
+                type: 'input'
+            },
+            {
+                title: '本周已完成内容',
+                slot: 'overWork',
+                type: 'textarea'
+            },
+            {
+                title: '未完成部分',
+                slot: 'remainWork',
+                type: 'textarea'
+            },
+            {
+                title: '影响原计划/其他项目',
+                slot: 'effect',
+                type: 'textarea'
+            },
+            {
+                title: '开始日期',
+                slot: 'startDate',
+                width: 108,
+                type: 'input'
+            },
+            {
+                title: '结束日期',
+                slot: 'endDate',
+                width: 108,
+                type: 'input'
+            },
+            /*{
+                title: '时间范围',
+                slot: 'range',
+                type: 'range',
+                width: 200
+            },*/
+            {
+                title: '开发完成情况',
+                slot: 'state',
+                type: 'select',
+                width: 120
+            },
+            {
+                title: '备注',
+                slot: 'remark',
+                type: 'textarea'
+            },
+            {
+                title: '操作',
+                slot: 'action',
+                type: 'handler',
+                width: 160
+            }
+        ],
+        stateFlags: [
+            { label: '已完成', value: '已完成'},
+            { label: '进行中', value: '进行中'},
+            { label: '计划项目', value: '计划项目'},
+        ],
+        data: [
+            {
+                projectName: "视频拼接",
+                partyA: "山源",
+                overWork: "已完成某某部分",
+                remainWork: "剩余某某部分未完成",
+                effect: "影响某项目，原计划3月18日，因为xx未完成",
+                startDate: "3月18日",
+                endDate: "3月19日",
+                state: "进行中",
+                remark: "备注"
+            }
+        ],
+        editProjectName: '',
+        editPartyA: '',
+        editOverWork: '',
+        editRemainWork: '',
+        editEffect: '',
+        editStartDate: '',
+        editEndDate: '',
+        editDateRange: '',
+        editState: '1',
+        editRemark: '',
+        editIndex: -1,
+        userName: ''
+    },
+    computed: {
+        weekRange: function () {
+
+        }
+    },
+    methods: {
+        getData() {
+
+        },
+        sendData() {
+            if(this.userName) {
+                axios.post('http://192.168.10.131:9999/api/projects', {data: this.data, userName: this.userName}).then(res => {
+                    if(res.status === 200) {
+                        this.$alert('祝您 周末愉快！', '提交成功', {
+                            confirmButtonText: '确定',
+                            callback: action => {
+                                // this.$message({
+                                //     type: 'info',
+                                //     message: `action: ${ action }`
+                                // });
+                            }
+                        });
+                    }
+                }).catch(error => {
+                    if (error.response.status === 405) {
+                        this.$alert('查无此人！', '提交失败', {
+                            confirmButtonText: '确定',
+                            callback: action => {
+                                // this.$message({
+                                //     type: 'info',
+                                //     message: `action: ${ action }`
+                                // });
+                            }
+                        });
+                    }
+                })
+            }
+        },
+        handleAdd() {
+            this.data.push({
+                projectName: "项目",
+                partyA: "甲方",
+                overWork: "已完成某某部分",
+                remainWork: "剩余某某部分未完成",
+                effect: "其他项目影响",
+                startDate: "3月18日",
+                endDate: "3月25日",
+                state: "进行中",
+                remark: "备注"
+            })
+        },
+        handleEdit(index, row) {
+            this.editIndex = index
+            // console.log(index);
+        },
+        handleDelete(index) {
+            this.data.splice(index, 1)
+        },
+        handleSave() {
+            this.editIndex = -1
+            // console.log(this.data);
+        },
+        tableRowClassName({row, rowIndex}) {
+            if (rowIndex === 1) {
+                return 'warning-row';
+            } else if (rowIndex === 3) {
+                return 'success-row';
+            }
+            return '';
+        },
+        calWidth(row) {
+            console.log(row);
+            let width = 100
+            if(row.type === 'date') {
+                width = 80
+            }
+            return width
+        }
+    }
+})
+</script>
+</body>
+</html>
