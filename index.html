@@ -233,6 +233,11 @@ new Vue({
                         });
                     }
                 })
+            } else {
+                this.$alert('请填入本人用户名！', '提交失败', {
+                    confirmButtonText: '确定',
+                    callback: action => {}
+                });
             }
         },
         handleAdd() {
