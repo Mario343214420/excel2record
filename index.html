@@ -203,9 +203,7 @@ new Vue({
         }
     },
     methods: {
-        getData() {
-
-        },
+        getData() {},
         sendData() {
             if(this.userName) {
                 axios.post('http://192.168.10.131:9999/api/projects', {data: this.data, userName: this.userName}).then(res => {
